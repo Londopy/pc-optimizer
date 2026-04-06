@@ -1,0 +1,30 @@
+# Build artifacts
+dist/
+build/
+*.spec.bak
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+
+# Installer output
+installer/output/
+
+# VS Code / IDE
+.vscode/
+.idea/
+*.suo
+*.user
+
+# Python env
+venv/
+.venv/
+env/
+
+# Logs
+*.log
+
+# Windows
+Thumbs.db
+Desktop.ini

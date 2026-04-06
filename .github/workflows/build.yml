@@ -1,0 +1,88 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Generate placeholder icon
+        run: |
+          python -c "
+          from PIL import Image, ImageDraw
+          img = Image.new('RGBA', (256, 256), (10, 14, 20, 255))
+          d = ImageDraw.Draw(img)
+          d.ellipse([20, 20, 236, 236], outline=(0, 212, 170), width=8)
+          d.polygon([(128, 60), (196, 196), (60, 196)], fill=(0, 212, 170))
+          img.save('assets/icon.png')
+          img.save('assets/icon.ico', format='ICO', sizes=[(16,16),(32,32),(48,48),(64,64),(128,128),(256,256)])
+          print('Icon generated')
+          "
+        shell: python
+
+      - name: Build with PyInstaller
+        run: pyinstaller pc_optimizer.spec --noconfirm
+
+      - name: Install Inno Setup
+        run: choco install innosetup --yes
+
+      - name: Create installer output directory
+        run: New-Item -ItemType Directory -Force -Path installer\output
+
+      - name: Build Inno Setup installer
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\setup.iss
+
+      - name: Get version
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          name: PC Optimizer Pro v${{ steps.version.outputs.VERSION }}
+          body: |
+            ## PC Optimizer Pro v${{ steps.version.outputs.VERSION }}
+
+            ### What's included
+            - One-click gaming optimization (17 tweaks)
+            - Corsair AIO fan control via liquidctl
+            - RGB lighting control via OpenRGB
+            - Windows debloat (35+ packages)
+            - Live hardware dashboard
+            - Minimize to system tray
+
+            ### Install
+            Download `PCOptimizerPro_Setup_*.exe` and run as Administrator.
+
+            ### Requirements
+            - Windows 10/11
+            - Admin rights
+            - [OpenRGB](https://openrgb.org/) for RGB control (optional)
+          files: |
+            installer/output/PCOptimizerPro_Setup_v*.exe
+          draft: false
+          prerelease: false
