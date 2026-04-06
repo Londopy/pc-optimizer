@@ -331,8 +331,7 @@ class InstallerApp(tk.Tk):
 
         tk.Label(logo_frame, text=APP_NAME.upper(),
                  bg=C["panel"], fg=C["white"],
-                 font=("Consolas", 11, "bold"),
-                 letter_spacing=3).pack(pady=(4, 0))
+                 font=("Consolas", 11, "bold")).pack(pady=(4, 0))
         tk.Label(logo_frame, text=f"v{APP_VERSION}",
                  bg=C["panel"], fg=C["dim"],
                  font=("Consolas", 8)).pack()
@@ -533,8 +532,7 @@ class InstallerApp(tk.Tk):
         # Install path
         tk.Label(f, text="INSTALL LOCATION",
                  bg=C["bg"], fg=C["dim"],
-                 font=("Consolas", 9, "bold"),
-                 letter_spacing=2).place(x=40, y=118)
+                 font=("Consolas", 9, "bold")).place(x=40, y=118)
 
         path_frame = tk.Frame(f, bg=C["card"],
                               highlightbackground=C["border"],
@@ -743,16 +741,29 @@ class InstallerApp(tk.Tk):
         self._summary_text.tag_config("info", foreground=C["teal"])
         self._summary_text.tag_config("dim",  foreground=C["dim"])
 
-        launch_btn = self._make_btn(f, "▶  LAUNCH APP",
-                                    self._launch_app, primary=True)
-        launch_btn.place(x=306, y=476)
+        # Big full-width launch button
+        self._launch_frame = tk.Frame(f, bg=C["teal"], cursor="hand2")
+        self._launch_frame.place(x=40, y=462, width=557, height=44)
+        self._launch_lbl = tk.Label(
+            self._launch_frame,
+            text="▶   LAUNCH PC OPTIMIZER PRO",
+            bg=C["teal"], fg=C["bg"],
+            font=("Consolas", 11, "bold"),
+            cursor="hand2")
+        self._launch_lbl.pack(expand=True, fill="both", pady=11)
+        for w in (self._launch_frame, self._launch_lbl):
+            w.bind("<Button-1>", lambda e: self._launch_app())
+            w.bind("<Enter>",    lambda e: [self._launch_frame.config(bg=C["teal_dim"]),
+                                            self._launch_lbl.config(bg=C["teal_dim"])])
+            w.bind("<Leave>",    lambda e: [self._launch_frame.config(bg=C["teal"]),
+                                            self._launch_lbl.config(bg=C["teal"])])
 
         close_btn = self._make_btn(f, "Close", self.destroy)
-        close_btn.place(x=447, y=520)
+        close_btn.place(x=447, y=522)
 
         open_folder_btn = self._make_btn(f, "Open Folder",
                                          self._open_install_folder)
-        open_folder_btn.place(x=40, y=520)
+        open_folder_btn.place(x=40, y=522)
 
     # ── WIDGETS ────────────────────────────────────────────
     def _make_btn(self, parent, text, command, primary=False, small=False):
@@ -1083,20 +1094,40 @@ class InstallerApp(tk.Tk):
         for line in summary_lines:
             tag = "ok" if line.startswith("✓") else "err"
             self._summary_text.insert("end", f"  {line}\n", tag)
-        self._summary_text.insert("end", "\n─" * 19 + "\n", "dim")
+        self._summary_text.insert("end", "\n" + "─" * 38 + "\n", "dim")
         self._summary_text.insert("end",
-            "To launch:  double-click the Desktop shortcut\n"
-            "       or:  python src/main.py  in the install folder\n", "dim")
+            "To launch:  click the button below, or\n"
+            "            double-click the Desktop shortcut\n", "dim")
         self._summary_text.config(state="disabled")
 
         self._done_install_dir = install_dir
 
-        # Find main.py
+        # Robustly find main.py — handles GitHub ZIP subfolder prefix
+        # (e.g. install_dir/pc-optimizer-main/src/main.py)
         self._done_main_py = None
-        for root, dirs, files in os.walk(install_dir):
-            if "main.py" in files and "src" in root:
-                self._done_main_py = os.path.join(root, "main.py")
+        candidates = [
+            os.path.join(install_dir, "src", "main.py"),
+            os.path.join(install_dir, f"{GITHUB_REPO}-{GITHUB_BRANCH}", "src", "main.py"),
+            os.path.join(install_dir, f"{GITHUB_REPO}-main", "src", "main.py"),
+        ]
+        for path in candidates:
+            if os.path.isfile(path):
+                self._done_main_py = path
                 break
+
+        # Fall back to full walk if candidates missed
+        if not self._done_main_py:
+            for root, dirs, files in os.walk(install_dir):
+                if "main.py" in files and os.path.basename(root) == "src":
+                    self._done_main_py = os.path.join(root, "main.py")
+                    break
+
+        # Update launch button state
+        if not self._done_main_py or not self._python_exe:
+            self._launch_lbl.config(
+                text="⚠   Could not locate main.py — check install folder",
+                bg=C["amber"], fg=C["bg"])
+            self._launch_frame.config(bg=C["amber"])
 
     def _create_desktop_shortcut(self, main_py):
         """Create a .bat launcher as a Desktop shortcut (no pywin32 needed)."""
@@ -1120,13 +1151,24 @@ class InstallerApp(tk.Tk):
             pass  # .bat launcher is fine
 
     def _launch_app(self):
-        if self._done_main_py and self._python_exe:
-            subprocess.Popen([self._python_exe, self._done_main_py],
-                             cwd=os.path.dirname(self._done_main_py))
+        if self._done_main_py and self._python_exe and os.path.isfile(self._done_main_py):
+            self._launch_lbl.config(text="Launching...")
+            self.after(300, lambda: (
+                subprocess.Popen(
+                    [self._python_exe, self._done_main_py],
+                    cwd=os.path.dirname(self._done_main_py)
+                ),
+                self.destroy()
+            ))
         else:
+            # Show exactly where we looked so user can debug
+            looked = os.path.join(
+                getattr(self, "_done_install_dir", DEFAULT_INSTALL), "src", "main.py")
             messagebox.showinfo(APP_NAME,
-                "Could not find main.py. Navigate to your install folder and run:\n"
-                "  python src/main.py")
+                f"Could not find main.py.\n\n"
+                f"Expected location:\n  {looked}\n\n"
+                f"Navigate to your install folder and run:\n"
+                f"  python src\\main.py")
 
     def _open_install_folder(self):
         try:
