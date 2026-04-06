@@ -172,7 +172,3 @@ git push --tags
 ## License
 
 MIT — fork it, share it, do whatever.
-
----
-
-*Built for: i9-12900KS · RTX 3090 Ti · DDR4-4000 · Windows 11*
