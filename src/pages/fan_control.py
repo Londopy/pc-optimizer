@@ -401,9 +401,12 @@ class FanControlPage(QWidget):
         self._build_ui()
         self._scan_devices()
 
+        # Only poll status when user is actively on this page
+        # Auto-polling every 3s was conflicting with iCUE/L-Connect
+        # Status refreshes on demand via the Rescan button instead
         self._timer = QTimer()
         self._timer.timeout.connect(self._refresh_status)
-        self._timer.start(3000)
+        # Timer starts only when page is shown — see showEvent/hideEvent
 
     def _build_ui(self):
         scroll = QScrollArea()
@@ -551,6 +554,16 @@ class FanControlPage(QWidget):
             self._lianli_panel.refresh_status()
         else:
             self._corsair_panel.refresh_status()
+
+    def showEvent(self, event):
+        """Start polling only when this page is actually visible."""
+        super().showEvent(event)
+        self._timer.start(5000)  # 5s interval — gentle on iCUE
+
+    def hideEvent(self, event):
+        """Stop polling when user navigates away."""
+        super().hideEvent(event)
+        self._timer.stop()
 
     def _apply_gpu_fan(self):
         if not HAS_NVML: return

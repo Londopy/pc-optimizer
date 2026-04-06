@@ -364,11 +364,12 @@ class OptimizerPage(QWidget):
             row_layout.addStretch()
 
             risk_dot = QLabel(f"● {task.risk.upper()}")
-            risk_dot.setStyleSheet(f"color: {risk_colors.get(task.risk, '#484f58')}; font-size: 10px; font-weight: bold; letter-spacing: 1px;")
+            risk_dot.setFixedWidth(80)
+            risk_dot.setStyleSheet(f"color: {risk_colors.get(task.risk, '#484f58')}; font-size: 10px; font-weight: bold;")
             row_layout.addWidget(risk_dot)
 
             run_btn = QPushButton("Run")
-            run_btn.setFixedWidth(56)
+            run_btn.setFixedSize(64, 28)
             run_btn.setObjectName("secondary_btn")
             run_btn.setCursor(Qt.CursorShape.PointingHandCursor)
             run_btn.clicked.connect(lambda _, t=task, b=run_btn: self._run_single(t, b))
