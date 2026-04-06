@@ -11,7 +11,7 @@
 
 ## Quick Install
 
-**Option B — Pre-built .exe (easiest, recommended for friends)**
+**Option A — Pre-built .exe (easiest, recommended for friends)**
 Download `PCOptimizerPro_Setup_vX.X.X.exe` from [Releases](https://github.com/Londopy/pc-optimizer/releases) and run as Administrator.
 
 **Option B — Python installer**
