@@ -11,14 +11,14 @@
 
 ## Quick Install
 
-**Option A — Python installer (easiest, recommended for friends)**
+**Option A — Pre-built .exe (easiest, recommended for friends)**
+Download `PCOptimizerPro_Setup_vX.X.X.exe` from [Releases](https://github.com/Londopy/pc-optimizer/releases) and run as Administrator.
+
+**Option B — Python installer**
 ```
 python PCOptimizerPro_Installer.py
 ```
 Downloads Python if missing, installs all dependencies, clones the repo, creates a desktop shortcut. Four-step GUI.
-
-**Option B — Pre-built .exe**
-Download `PCOptimizerPro_Setup_vX.X.X.exe` from [Releases](https://github.com/Londopy/pc-optimizer/releases) and run as Administrator.
 
 **Option C — Manual**
 ```bash
@@ -172,7 +172,3 @@ git push --tags
 ## License
 
 MIT — fork it, share it, do whatever.
-
----
-
-*Built for: i9-12900KS · RTX 3090 Ti · DDR4-4000 · Windows 11*
